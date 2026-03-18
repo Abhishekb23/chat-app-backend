@@ -4,18 +4,32 @@ const onlineUsers = new Map();
 
 function initSocket(io) {
   io.on("connection", (socket) => {
+    console.log("Socket connected:", socket.id);
+
     socket.on("register", (userId) => {
-      onlineUsers.set(Number(userId), socket.id);
+      const parsedUserId = Number(userId);
+      if (!parsedUserId) return;
+
+      onlineUsers.set(parsedUserId, socket.id);
+      console.log(`User ${parsedUserId} registered with socket ${socket.id}`);
     });
 
     socket.on("join_conversation", (conversationId) => {
-      const roomName = `conversation_${Number(conversationId)}`;
+      const parsedConversationId = Number(conversationId);
+      if (!parsedConversationId) return;
+
+      const roomName = `conversation_${parsedConversationId}`;
       socket.join(roomName);
+      console.log(`Socket ${socket.id} joined room ${roomName}`);
     });
 
     socket.on("leave_conversation", (conversationId) => {
-      const roomName = `conversation_${Number(conversationId)}`;
+      const parsedConversationId = Number(conversationId);
+      if (!parsedConversationId) return;
+
+      const roomName = `conversation_${parsedConversationId}`;
       socket.leave(roomName);
+      console.log(`Socket ${socket.id} left room ${roomName}`);
     });
 
     socket.on("send_message", async (data) => {
@@ -78,6 +92,7 @@ function initSocket(io) {
           onlineUsers.delete(userId);
         }
       }
+      console.log("Socket disconnected:", socket.id);
     });
   });
 }
