@@ -4,10 +4,12 @@ const fs = require("fs");
 
 const uploadDir = path.join(__dirname, "..", "uploads");
 
+// Create uploads folder if not exists
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Storage config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDir);
@@ -20,29 +22,17 @@ const storage = multer.diskStorage({
   },
 });
 
-const allowedTypes = [
-  "image/jpeg",
-  "image/png",
-  "image/jpg",
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain",
-];
-
+// Allow ALL file types
 const fileFilter = (req, file, cb) => {
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Unsupported file type"), false);
-  }
+  cb(null, true);
 };
 
+// Multer setup
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 50 * 1024 * 1024, // ✅ 50 MB
   },
 });
 
