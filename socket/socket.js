@@ -40,10 +40,23 @@ function initSocket(io) {
 
         if (!conversationId || !senderId || !content) return;
 
+        const access = await query(
+          `
+          SELECT 1
+          FROM conversation_members
+          WHERE conversation_id = $1::int
+            AND user_id = $2::int
+          LIMIT 1
+          `,
+          [conversationId, senderId]
+        );
+
+        if (access.rows.length === 0) return;
+
         const result = await query(
           `
-          INSERT INTO messages (conversation_id, sender_id, content)
-          VALUES ($1::int, $2::int, $3)
+          INSERT INTO messages (conversation_id, sender_id, content, message_type)
+          VALUES ($1::int, $2::int, $3, 'TEXT')
           RETURNING id
           `,
           [conversationId, senderId, content]
@@ -66,10 +79,15 @@ function initSocket(io) {
             m.sender_id,
             u.username AS sender_name,
             m.content,
+            m.message_type,
             m.is_edited,
             m.is_deleted,
             m.created_at,
-            m.updated_at
+            m.updated_at,
+            NULL AS file_url,
+            NULL AS original_name,
+            NULL AS mime_type,
+            NULL AS file_size
           FROM messages m
           JOIN users u ON u.id = m.sender_id
           WHERE m.id = $1::int

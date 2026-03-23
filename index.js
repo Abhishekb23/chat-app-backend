@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const http = require("http");
+const path = require("path");
 const { Server } = require("socket.io");
 
 const { pool } = require("./config/db");
@@ -40,16 +41,22 @@ app.use(
   })
 );
 
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
+
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PATCH", "DELETE"],
     credentials: true,
   },
 });
+
+app.set("io", io);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
