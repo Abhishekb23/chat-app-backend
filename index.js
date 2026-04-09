@@ -19,40 +19,29 @@ const initSocket = require("./socket/socket");
 const app = express();
 const server = http.createServer(app);
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://chat-app-frontend-jet-five.vercel.app",
-];
-
-if (process.env.CLIENT_URL && !allowedOrigins.includes(process.env.CLIENT_URL)) {
-  allowedOrigins.push(process.env.CLIENT_URL);
-}
-
+// Allow all origins
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-app.use(helmet({
-  crossOriginResourcePolicy: false,
-}));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
 
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// Socket.IO allow all origins
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PATCH", "DELETE"],
-    credentials: true,
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   },
 });
 
@@ -70,14 +59,15 @@ const PORT = process.env.PORT || 5000;
 
 (async () => {
   try {
-    await pool.connect();
+    const client = await pool.connect();
+    client.release();
     console.log("PostgreSQL connected");
 
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on ${PORT}`);
-      console.log("Allowed origins:", allowedOrigins);
+      console.log("CORS: All origins allowed");
     });
   } catch (err) {
-    console.error(err);
+    console.error("Database connection error:", err);
   }
 })();
